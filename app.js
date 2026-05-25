@@ -9,7 +9,19 @@ require('dotenv').config();
 
 var app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:80',
+    'http://localhost:8000',
+    'https://socnet-client.vercel.app',
+    'https://socnet-client-git-main-sergey86fr.vercel.app',
+    'https://socialnetwork.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
