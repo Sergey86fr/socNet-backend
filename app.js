@@ -9,19 +9,29 @@ require('dotenv').config();
 
 var app = express();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:80',
+  'https://mynetwork-red.vercel.app',
+  'https://socnet-client.vercel.app',
+  'https://socialnetwork.vercel.app'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:80',
-    'http://localhost:8000',
-    'https://socnet-client.vercel.app',
-    'https://socnet-client-git-main-sergey86fr.vercel.app',
-    'https://socialnetwork.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (например, от curl или мобильных приложений)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
