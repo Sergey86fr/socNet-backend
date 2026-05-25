@@ -1,28 +1,44 @@
+const path = require("path");
+const fs = require("fs");
 const { prisma } = require('../prisma/prisma-client');
 
 const PostController = {
   createPost: async (req, res) => {
+    try {
     const { content } = req.body;
 
     const authorId = req.user.userId;
 
-    if (!content) {
-      return res.status(400).json({ error: 'Все поля обязательны' });
+    if (!content  && (!req.files || req.files.length === 0)) {
+      return res.status(400).json({ error: "Текст или изображение обязательны" });
     }
 
-    try {
+      const imagePaths = req.files 
+        ? req.files.map(file => `/uploads/posts/${file.filename}`)
+        : [];
+
       const post = await prisma.post.create({
         data: {
-          content,
+          content: content || "",
+          images: imagePaths,
           authorId
         },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+            }
+          }
+        }
       });
 
       res.json(post);
     } catch (error) {
       console.error("Error in createPost:", error);
 
-      res.status(500).json({ error: 'There was an error creating the post' });
+      res.status(500).json({ error: "Ошибка при создании поста" });
     }
   },
 
@@ -101,6 +117,18 @@ const PostController = {
     }
 
     try {
+
+        if (post.images && post.images.length > 0) {
+      post.images.forEach(imagePath => {
+        // Путь относительно корня проекта
+        const fullPath = path.join(__dirname, '..', imagePath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+          console.log(`Deleted: ${fullPath}`);
+        }
+      });
+    }
+
       const transaction = await prisma.$transaction([
         prisma.comment.deleteMany({ where: { postId: id } }),
         prisma.like.deleteMany({ where: { postId: id } }),

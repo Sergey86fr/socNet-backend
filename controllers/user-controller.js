@@ -130,7 +130,10 @@ const UserController = {
     try {
       if (email) {
         const existingUser = await prisma.user.findFirst({
-          where: { email: email },
+          where: { 
+            email: email,
+             id: { not: id } 
+           },
         });
     
         if (existingUser && existingUser.id !== parseInt(id)) {

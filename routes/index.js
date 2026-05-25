@@ -7,8 +7,15 @@ const LikeController = require("../controllers/like-controller");
 const CommentController = require("../controllers/comment-controller");
 const { authenticateToken } = require("../middleware/auth");
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 const uploadDestination = 'uploads';
+
+const postsDestination = 'uploads/posts';
+if (!fs.existsSync(postsDestination)) {
+  fs.mkdirSync(postsDestination, { recursive: true });
+}
 
 // Показываем, где хранить загружаемые файлы
 const storage = multer.diskStorage({
@@ -18,7 +25,33 @@ const storage = multer.diskStorage({
   }
 });
 
+
+const postsStorage = multer.diskStorage({
+  destination: postsDestination,
+  filename: function (req, file, cb) {
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+  
+  if (mimetype && extname) {
+    return cb(null, true);
+  }
+  cb(new Error("Только изображения разрешены"));
+};
+
 const upload = multer({ storage: storage });
+
+const uploadPostImages = multer({ 
+  storage: postsStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter 
+});
 // Роуты User
 router.post("/register", UserController.register);
 router.post("/login", UserController.login);
@@ -27,7 +60,7 @@ router.get("/users/:id", authenticateToken, UserController.getUserById);
 router.put("/users/:id", authenticateToken, upload.single('avatar'), UserController.updateUser);
 
 // Роуты Post
-router.post("/posts", authenticateToken, PostController.createPost);
+router.post("/posts", authenticateToken, uploadPostImages.array('images', 4) , PostController.createPost);
 router.get("/posts", authenticateToken, PostController.getAllPosts);
 router.get("/posts/:id", authenticateToken, PostController.getPostById);
 router.delete("/posts/:id", authenticateToken, PostController.deletePost);

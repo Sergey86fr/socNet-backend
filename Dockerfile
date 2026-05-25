@@ -14,10 +14,10 @@ RUN npm install
 COPY . .
 
 # Устанавливаем Prisma
-RUN npm install -g prisma
+# RUN npm install -g prisma
 
 # Генерируем Prisma client
-RUN prisma generate
+RUN npx prisma generate
 
 # Копируем Prisma schema и URL базы данных в контейнер
 COPY prisma/schema.prisma ./prisma/
