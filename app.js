@@ -36,7 +36,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.set('view engine', 'pug');
+// app.set('view engine', 'pug');
 // Раздавать статические файлы из папки 'uploads'
 // app.use('/uploads', express.static('uploads'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -53,14 +53,16 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use(function(req, res, next) {
+  res.status(404).json({ error: 'Not Found' });
+});
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+// ✅ Обработчик ошибок — возвращаем JSON, а не рендерим шаблон
+app.use(function(err, req, res, next) {
+  console.error(err.stack); // Логируем ошибку для отладки
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  });
 });
 
 module.exports = app;
